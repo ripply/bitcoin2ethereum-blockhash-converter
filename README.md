@@ -1,5 +1,5 @@
 
-# Qtum block hash to Ethereum block hash converter
+# Bitcoin block hash to Ethereum block hash converter
 
 Qtum (Bitcoin) block hashes are calculated using `SHA256`
 Instead Ethereum uses `keccak256` as its hashing algorithm.
@@ -8,6 +8,7 @@ This program scans all the blocks from Qtum network (aprox 1.7 millions) and for
 ## Features
 
 - Worker pool architecture
+- Circuit breaker protection
 - Configurable number of workers (defaults to num of CPU cores)
 - JSON RPC client over http
 - http retry with backoff strategy and jitter schema
