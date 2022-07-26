@@ -14,7 +14,6 @@ import (
 	"github.com/alejoacosta74/eth2bitcoin-block-hash/dispatcher"
 	"github.com/alejoacosta74/eth2bitcoin-block-hash/jsonrpc"
 	"github.com/alejoacosta74/eth2bitcoin-block-hash/log"
-	"github.com/alejoacosta74/eth2bitcoin-block-hash/workers"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -64,7 +63,8 @@ func main() {
 	// channel to receive errors from goroutines
 	errChan := make(chan error, *numWorkers+1)
 	// channel to pass blocks to workers
-	blockChan := make(chan string, *numWorkers)
+	blockChan := make(chan int64, *numWorkers)
+	completedBlockChan := make(chan int64, *numWorkers)
 	// channel to pass results from workers to DB
 	resultChan := make(chan jsonrpc.HashPair, *numWorkers)
 
@@ -92,11 +92,11 @@ func main() {
 	// dispatch blocks to block channel
 	ctx, cancelFunc := context.WithCancel(context.Background())
 
-	d := dispatcher.NewDispatcher(blockChan, *providers, *blockFrom, *blockTo, done, errChan)
-	d.Start(ctx)
+	d := dispatcher.NewDispatcher(blockChan, completedBlockChan, *providers, *blockFrom, *blockTo, done, errChan)
+	d.Start(ctx, *numWorkers, *providers)
 	// start workers
-	wg.Add(*numWorkers)
-	workers.StartWorkers(ctx, *numWorkers, blockChan, resultChan, *providers, &wg, errChan)
+	// wg.Add(*numWorkers)
+	// workers.StartWorkers(ctx, *numWorkers, blockChan, resultChan, *providers, &wg, errChan)
 	start = time.Now()
 
 	var status int

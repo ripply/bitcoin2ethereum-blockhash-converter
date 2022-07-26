@@ -59,7 +59,6 @@ func NewClient(url string, id int) *Client {
 }
 
 func (c *Client) Call(ctx context.Context, method string, params ...interface{}) (*JSONRPCResponse, error) {
-
 	rpcRequest := newJSONRPCRequest(method, params...)
 	jsonRequest, err := json.Marshal(rpcRequest)
 	if err != nil {

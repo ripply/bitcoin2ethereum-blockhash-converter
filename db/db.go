@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -63,6 +64,41 @@ func NewQtumDB(connectionString string, resultChan chan jsonrpc.HashPair, errCha
 func (q *QtumDB) insert(blockNum int, eth, qtum string) (sql.Result, error) {
 	insertDynStmt := `INSERT INTO "Hashes"("BlockNum", "Eth", "Qtum") VALUES($1, $2, $3) ON CONFLICT ON CONSTRAINT "Hashes_pkey" DO UPDATE SET "Eth" = $2, "Qtum" = $3`
 	return q.db.Exec(insertDynStmt, blockNum, eth, qtum)
+}
+
+func (q *QtumDB) getMissing(latestBlock int) (sql.Result, error) {
+	// TODO: Compute missing rows, work sql magic, there will be like 2million records
+	insertDynStmt := `INSERT INTO "Hashes"("BlockNum", "Eth", "Qtum") VALUES($1, $2, $3) ON CONFLICT ON CONSTRAINT "Hashes_pkey" DO UPDATE SET "Eth" = $2, "Qtum" = $3`
+	return q.db.Exec(insertDynStmt, latestBlock)
+}
+
+func (q *QtumDB) getQtumHash(ctx context.Context, ethHash string) (*sql.Rows, error) {
+	// TODO: Compute missing rows, work sql magic, there will be like 2million records
+	selectStatement := `SELECCT Qtum FROM "Hashes" WHERE "Hashes"."Eth" = $1`
+	if ctx == nil {
+		return q.db.Query(selectStatement, ethHash)
+	} else {
+		return q.db.QueryContext(ctx, selectStatement, ethHash)
+	}
+}
+
+func (q *QtumDB) GetQtumHash(ethHash string) (string, error) {
+	return q.GetQtumHashContext(nil, ethHash)
+}
+
+func (q *QtumDB) GetQtumHashContext(ctx context.Context, ethHash string) (string, error) {
+	var qtumHash string
+	rows, err := q.getQtumHash(ctx, ethHash)
+	if err != nil {
+		return qtumHash, err
+	}
+
+	if rows == nil {
+		panic("no rows")
+	}
+
+	err = rows.Scan(&qtumHash)
+	return qtumHash, err
 }
 
 func (q *QtumDB) DropTable() (sql.Result, error) {
